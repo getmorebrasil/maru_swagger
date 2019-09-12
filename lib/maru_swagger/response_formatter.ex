@@ -33,10 +33,26 @@ defmodule MaruSwagger.ResponseFormatter do
         })
       end)
 
-    wrap_in_swagger_info(paths, tags, config)
+    definitions = format_definitions(routes)
+
+    wrap_in_swagger_info(paths, tags, definitions, config)
   end
 
-  defp wrap_in_swagger_info(paths, tags, config = %ConfigStruct{}) do
+  defp format_definitions(routes) do
+    routes |> List.foldr(%{}, fn (route, result) ->
+      case route do
+        %{desc: %{model: %{name: name, fields: fields}}} ->
+          result |> put_in([name], 
+            %{
+              type: "object",
+              properties: fields |> Enum.into(%{}, &({&1.name, %{type: &1.type, format: &1.format}}))
+            })
+        _ -> result
+      end
+    end)
+  end
+
+  defp wrap_in_swagger_info(paths, tags, definitions, config = %ConfigStruct{}) do
     res = %{
       swagger: "2.0",
       info:
@@ -45,6 +61,7 @@ defmodule MaruSwagger.ResponseFormatter do
           _ -> format_default(config)
         end,
       paths: paths,
+      definitions: definitions,
       tags: tags
     }
 
