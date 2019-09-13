@@ -42,14 +42,21 @@ defmodule MaruSwagger.ResponseFormatter do
     routes |> List.foldr(%{}, fn (route, result) ->
       case route do
         %{desc: %{model: %{name: name, fields: fields}}} ->
-          result |> put_in([name], 
+          result |> put_in([name],
             %{
               type: "object",
-              properties: fields |> Enum.into(%{}, &({&1.name, %{type: &1.type, format: &1.format}}))
+              properties: fields |> Enum.into(%{}, &(&1 |> format_field))
             })
         _ -> result
       end
     end)
+  end
+
+  defp format_field(field) do
+    case field do
+      %{name: name, model: model} -> {name, %{"$ref": "#/definitions/#{model}"}}
+      %{name: name, type: type}   -> {name, %{type: type}}
+    end
   end
 
   defp wrap_in_swagger_info(paths, tags, definitions, config = %ConfigStruct{}) do
