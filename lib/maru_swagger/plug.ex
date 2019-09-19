@@ -61,10 +61,10 @@ defmodule MaruSwagger.Plug do
       method: method,
       path: path,
       params: params,
-      tag: tag_name(ep.version)
+      tag: tag_name(ep.desc)
     }
   end
 
-  defp tag_name(nil), do: "DEFAULT"
-  defp tag_name(v), do: "Version: #{v}"
+  defp tag_name(%{tag: tag}), do: tag
+  defp tag_name(_), do: "DEFAULT"
 end
